@@ -1,6 +1,6 @@
 # This project is forked from 
 ## https://github.com/LSPosed/DisableFlagSecure/
-### Fix crash with screen cast via Wi‑Fi Display/Miracast
+### Fix crash with car head unit casting via Wi‑Fi Display/Miracast
 ### 修复使用了该模块后投屏到部分车机时会出现画面一闪而过投屏直接退出的情况
 #### remove
 1. DisplayControl.createDisplay/createVirtualDisplay
