@@ -3,6 +3,7 @@ package io.github.lsposed.disableflagsecure;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.util.Log;
 import android.view.SurfaceControl;
@@ -83,6 +84,14 @@ public class DisableFlagSecure extends XposedModule {
             } catch (Throwable t) {
                 log(Log.ERROR, TAG, "hook ActivityManagerService failed", t);
             }
+        }
+
+        // VirtualDisplay with MediaProjection (S~Baklava). Keep this hook for
+        // screen recording and scrcpy, while leaving WifiDisplay untouched.
+        try {
+            hookVirtualDisplayAdapter(classLoader);
+        } catch (Throwable t) {
+            log(Log.ERROR, TAG, "hook VirtualDisplayAdapter failed", t);
         }
 
         // OneUI
@@ -268,6 +277,28 @@ public class DisableFlagSecure extends XposedModule {
         };
         hookMethods(screenCaptureClazz, hooker, "nativeCaptureDisplay");
         hookMethods(screenCaptureClazz, hooker, "nativeCaptureLayers");
+    }
+
+    private void hookVirtualDisplayAdapter(ClassLoader classLoader) throws ClassNotFoundException {
+        var displayControlClazz = classLoader.loadClass("com.android.server.display.VirtualDisplayAdapter");
+        hookMethods(displayControlClazz, chain -> {
+            var caller = (int) chain.getArg(2);
+            if (caller >= 10000 && chain.getArg(1) == null) {
+                // not os and not media projection
+                return chain.proceed();
+            }
+            for (int i = 3; i < chain.getArgs().size(); i++) {
+                var arg = chain.getArg(i);
+                if (arg instanceof Integer flags) {
+                    flags |= DisplayManager.VIRTUAL_DISPLAY_FLAG_SECURE;
+                    var args = chain.getArgs().toArray();
+                    args[i] = flags;
+                    return chain.proceed(args);
+                }
+            }
+            module.log(Log.WARN, TAG, "flag not found in CreateVirtualDisplayLockedHooker");
+            return chain.proceed();
+        }, "createVirtualDisplayLocked");
     }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
