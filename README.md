@@ -4,7 +4,6 @@
 ### 修复使用了该模块后投屏到部分车机时会出现画面一闪而过投屏直接退出的情况
 #### remove
 1. DisplayControl.createDisplay/createVirtualDisplay
-2. VirtualDisplayAdapter.createVirtualDisplayLocked
 ----------
 
 ## Enable Screenshot (formerly known as Disable FLAG_SECURE)
